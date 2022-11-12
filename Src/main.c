@@ -23,8 +23,7 @@
 #include "i2c.h"
 #include "gpio.h"
 #include "usart.h"
-#include "lis3mdltr.h"
-#include "lsm6ds0.h"
+#include "hts221.h"
 #include "stdio.h"
 #include "string.h"
 #include "dma.h"
@@ -52,12 +51,11 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
 
-  lsm6ds0_init();
+  hts221_init();
 
   while (1)
   {
 	  //os			   x      y        z
-	  lsm6ds0_get_acc(acc, (acc+1), (acc+2));
 	  memset(formated_text, '\0', sizeof(formated_text));
 	  sprintf(formated_text, "%0.4f,%0.4f,%0.4f\r", acc[0], acc[1], acc[2]);
 	  USART2_PutBuffer((uint8_t*)formated_text, strlen(formated_text));

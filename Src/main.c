@@ -27,12 +27,19 @@
 #include "stdio.h"
 #include "string.h"
 #include "dma.h"
+#include "pressure.h"
+#include <math.h>
 
 #define CHAR_BUFF_SIZE	30
 
 uint8_t humidity = 0;
 float temperature = 0;
 float mag[3], acc[3];
+float pressure = 0;
+float constant = 0.0342;
+float height = 0;
+float pressureatsealevel = 101325;
+float T = 0;
 char formated_text[30], value_x[10], value_y[10], value_z[10];
 
 void SystemClock_Config(void);
@@ -53,12 +60,18 @@ int main(void)
   MX_USART2_UART_Init();
 
   hts221_init();
+  lps22hb_init();
 
   while (1)
   {
+	  //os			   x      y        z
+	  pressure = lps22hb_get_pressure();
+	  T=lps22hb_get_temperature()+273.15;
+	  height = (-log((100*pressure/pressureatsealevel))*T)/constant;
 	  temperature=hts221_get_temperature();
 	  humidity=hts221_get_humidity();
 	  memset(formated_text, '\0', sizeof(formated_text));
+	  sprintf(formated_text, "%.2f, %.2f\r", pressure, height);
 	  sprintf(formated_text, "Teplota: %.1f, Vlhkost: %d%%\r", temperature,humidity);
 	  USART2_PutBuffer((uint8_t*)formated_text, strlen(formated_text));
 	  LL_mDelay(10);

@@ -7,24 +7,24 @@
 
 #include "pressure.h"
 
-uint8_t addres = lps22hb_DEVICE_ADDRESS_0;
+uint8_t addres1 = lps22hb_DEVICE_ADDRESS_0;
 
 uint8_t lps22hb_read_byte(uint8_t reg_addr)
 {
 	uint8_t data = 0;
-	return *(i2c_master_read(&data, 1, reg_addr, addres, 0));
+	return *(i2c_master_read(&data, 1, reg_addr, addres1, 0));
 }
 
 
 void lps22hb_write_byte(uint8_t reg_addr, uint8_t value)
 {
-	i2c_master_write(value, reg_addr, addres, 0);
+	i2c_master_write(value, reg_addr, addres1, 0);
 }
 
 
 void lps22hb_readArray(uint8_t * data, uint8_t reg, uint8_t length)
 {
-	i2c_master_read(data, length, reg, addres, 0);
+	i2c_master_read(data, length, reg, addres1, 0);
 }
 
 
@@ -70,7 +70,7 @@ uint8_t lps22hb_init(void)
 		}
 		else			//if the device is not found on one address, try another one
 		{
-			addres = lps22hb_DEVICE_ADDRESS_1;
+			addres1 = lps22hb_DEVICE_ADDRESS_1;
 			val = lps22hb_read_byte(lps22hb_WHO_AM_I_ADDRES);
 			if(val == lps22hb_WHO_AM_I_VALUE)
 			{

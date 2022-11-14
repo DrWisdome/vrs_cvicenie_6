@@ -71,8 +71,7 @@ int main(void)
 	  temperature=hts221_get_temperature();
 	  humidity=hts221_get_humidity();
 	  memset(formated_text, '\0', sizeof(formated_text));
-	  sprintf(formated_text, "%.2f, %.2f\r", pressure, height);
-	  sprintf(formated_text, "Teplota: %.1f, Vlhkost: %d%%\r", temperature,humidity);
+	  sprintf(formated_text, "Teplota: %.1f, Vlhkost: %d%% Tlak: %.2f, Vyska: %.2f\r", temperature,humidity,pressure, height);
 	  USART2_PutBuffer((uint8_t*)formated_text, strlen(formated_text));
 	  LL_mDelay(10);
   }

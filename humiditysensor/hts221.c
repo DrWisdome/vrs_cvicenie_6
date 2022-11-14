@@ -1,5 +1,5 @@
 /*
- * lsm6ds0.c
+ * hts221.c
  *
  *  Created on: 17. 11. 2019
  *      Author: Stancoj
@@ -7,7 +7,7 @@
 
 #include "hts221.h"
 
-uint8_t addres = HTS221_DEVICE_ADDRESS_0;
+uint8_t addres = hts221_DEVICE_ADDRESS_0;
 
 uint8_t hts221_read_byte(uint8_t reg_addr)
 {
@@ -28,38 +28,58 @@ void hts221_readArray(uint8_t * data, uint8_t reg, uint8_t length)
 }
 
 
-int8_t hts221_get_temp()
+int8_t hts221_get_humidity()
 {
-	uint8_t temp[2];
-	hts221_readArray(temp, HTS221_TEMP_OUT_L, 2);
+	uint8_t humidity[2];
+	humidity[0]=hts221_read_byte(hts221_ADDRESS_HUMIDITY_L);
+	humidity[1]=hts221_read_byte(hts221_ADDRESS_HUMIDITY_H);
+	int16_t total_h=((humidity[1] << 8) | humidity[0]);
 
-	return (((int16_t)((temp[1] << 8) | temp[0])) >> 3)  + 25;
+	uint8_t cal0[2];
+	cal0[0]=hts221_read_byte(hts221_ADDRESS_H0_T0_OUT_L);
+	cal0[1]=hts221_read_byte(hts221_ADDRESS_H0_T0_OUT_H);
+	int16_t total_cal0=((cal0[1] << 8) | cal0[0]);
+
+	uint8_t cal1[2];
+	cal1[0]=hts221_read_byte(hts221_ADDRESS_H1_T0_OUT_L);
+	cal1[1]=hts221_read_byte(hts221_ADDRESS_H1_T0_OUT_H);
+	int16_t total_cal1=((cal1[1] << 8) | cal1[0]);
+
+	uint8_t cal0_y=hts221_read_byte(hts221_ADDRESS_H0_rH_x2);
+	uint8_t cal1_y=hts221_read_byte(hts221_ADDRESS_H1_rH_x2);
+
+	float k=(float)(cal1_y-cal0_y)/(total_cal1-total_cal0);
+	float q =(float)(cal1_y-k*total_cal1);
+	int8_t total =(int8_t)(k*total_h+q)/2;
+	return total;
 }
 
-
-/***void lsm6ds0_get_acc(float* x, float* y, float* z)
+int8_t hts221_get_temperature()
 {
-	uint8_t data[6];
-	int16_t xx, yy, zz;
+	uint8_t temeperature[2];
+	temperature[0]=hts221_read_byte(hts221_ADDRESS_HUMIDITY_L);
+	temperature[1]=hts221_read_byte(hts221_ADDRESS_HUMIDITY_H);
+	int16_t total_t=((temperature[1] << 8) | temperature[0]);
 
-	uint8_t temp;
+	uint8_t cal0[2];
+	cal0[0]=hts221_read_byte(hts221_ADDRESS_H0_T0_OUT_L);
+	cal0[1]=hts221_read_byte(hts221_ADDRESS_H0_T0_OUT_H);
+	int16_t total_cal0=((cal0[1] << 8) | cal0[0]);
 
-	//get current scale and use it for final calculation
-    //temp = lsm6ds0_read_byte(LSM6DS0_ADDRESS_CTRL1);
+	uint8_t cal1[2];
+	cal1[0]=hts221_read_byte(hts221_ADDRESS_H1_T0_OUT_L);
+	cal1[1]=hts221_read_byte(hts221_ADDRESS_H1_T0_OUT_H);
+	int16_t total_cal1=((cal1[1] << 8) | cal1[0]);
 
-	temp = temp >> 2;
-    temp &= 0x03;			//full scale bits extracted
+	uint8_t cal0_y=hts221_read_byte(hts221_ADDRESS_H0_rH_x2);
+	uint8_t cal1_y=hts221_read_byte(hts221_ADDRESS_H1_rH_x2);
 
-	//lsm6ds0_readArray(data, LSM6DS0_ADDRESS_ACCX, 6);
+	float k=(float)(cal1_y-cal0_y)/(total_cal1-total_cal0);
+	float q =(float)(cal1_y-k*total_cal1);
+	int8_t total =(int8_t)(k*total_t+q)/2;
+	return total;
+}
 
-	xx = ((uint16_t)data[1]) << 8 | data[0];
-	yy = ((uint16_t)data[3]) << 8 | data[2];
-	zz = ((uint16_t)data[5]) << 8 | data[4];
-
-	*x = (xx >> 4) / 1000.0f;
-	*y = (yy >> 4) / 1000.0f;
-	*z = (zz >> 4) / 1000.0f;
-}**/
 
 
 uint8_t hts221_init(void)
@@ -71,32 +91,23 @@ uint8_t hts221_init(void)
 
 	LL_mDelay(100);
 
-	uint8_t val = hts221_read_byte(HTS221_WHO_AM_I_ADDRES);
+	uint8_t val = hts221_read_byte(hts221_WHO_AM_I_ADDRES);
 
-	if(val == HTS221_WHO_AM_I_VALUE)
+	if(val == hts221_WHO_AM_I_VALUE)
 	{
 		status = 1;
 	}
 	else			//if the device is not found on one address, try another one
 	{
-		addres = HTS221_DEVICE_ADDRESS_1;
-		val = hts221_read_byte(HTS221_WHO_AM_I_ADDRES);
-		if(val == HTS221_WHO_AM_I_VALUE)
-		{
-			status = 1;
-		}
-		else
-		{
 			status = 0;
 			//return status;
-		}
 	}
 
 	//acc device init
-	//uint8_t ctrl1 = lsm6ds0_read_byte(LSM6DS0_ADDRESS_CTRL1);
-	//ctrl1 &= ~0xFC;
-	//ctrl1 |= 0x70;
-	//lsm6ds0_write_byte(LSM6DS0_ADDRESS_CTRL1, ctrl1);
+	uint8_t ctrl1 = hts221_read_byte(hts221_ADDRESS_CTRL1);
+	ctrl1 &= 0x78;
+	ctrl1 |= 0x81;
+	hts221_write_byte(hts221_ADDRESS_CTRL1, ctrl1);
 
 	return status;
 }

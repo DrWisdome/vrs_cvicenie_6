@@ -31,6 +31,7 @@
 #define CHAR_BUFF_SIZE	30
 
 uint8_t humidity = 0;
+float temperature = 0;
 float mag[3], acc[3];
 char formated_text[30], value_x[10], value_y[10], value_z[10];
 
@@ -55,9 +56,10 @@ int main(void)
 
   while (1)
   {
+	  temperature=hts221_get_temperature();
 	  humidity=hts221_get_humidity();
 	  memset(formated_text, '\0', sizeof(formated_text));
-	  sprintf(formated_text, "%d\r", humidity);
+	  sprintf(formated_text, "Teplota: %.1f, Vlhkost: %d%%\r", temperature,humidity);
 	  USART2_PutBuffer((uint8_t*)formated_text, strlen(formated_text));
 	  LL_mDelay(10);
   }
